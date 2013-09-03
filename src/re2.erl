@@ -12,14 +12,14 @@
 
 
 init() ->
-    ct:log("~p:~p", [?MODULE, init]),
+    %% ct:log("~p:~p", [?MODULE, init]),
     Module_path = code:which(?MODULE),
     App_path = filename:dirname(filename:dirname(Module_path)),
     Lib_path = filename:join([App_path, "priv", "re2_nif"]),
-    io:format("Loading ~p~n", [Lib_path]),
-    ct:log("Loading ~p~n", [Lib_path]),
-    ok = erlang:load_nif(Lib_path, 0),
-    ct:log("Loaded").
+    %% io:format("Loading ~p~n", [Lib_path]),
+    %% ct:log("Loading ~p~n", [Lib_path]),
+    ok = erlang:load_nif(Lib_path, 0).
+    %% ct:log("Loaded").
 
 
 foo(_X) ->
