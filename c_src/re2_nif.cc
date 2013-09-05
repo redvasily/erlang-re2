@@ -80,7 +80,7 @@ static ERL_NIF_TERM prepare(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 
   RE2 *re = new RE2(pattern);
   prepared_patterns[key] = re;
-  return enif_make_atom(env, "true");
+  return enif_make_atom(env, "ok");
 }
 
 static ERL_NIF_TERM get_nr_prepared(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]) {
