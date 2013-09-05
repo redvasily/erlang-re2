@@ -17,7 +17,8 @@ all() ->
      full_match_badarg,
      prepare,
      full_match_prepared_true,
-     full_match_prepared_false].
+     full_match_prepared_false,
+     clear_prepared].
 
 
 init_per_suite(Config) ->
@@ -69,3 +70,9 @@ full_match_prepared_true(_Config) ->
 full_match_prepared_false(_Config) ->
     re2:prepare("h.*o", hello_pattern),
     ?assertEqual(false, re2:full_match("hella", hello_pattern)).
+
+
+clear_prepared(_Config) ->
+    ok = re2:prepare("h.*o", hello_pattern),
+    re2:clear_prepared(),
+    ?assertEqual(0, re2:get_nr_prepared()).

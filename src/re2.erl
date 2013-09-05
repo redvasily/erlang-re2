@@ -6,7 +6,8 @@
          full_match/2,
          prepare/2,
          remove_prepared/1,
-         get_nr_prepared/0]).
+         get_nr_prepared/0,
+         clear_prepared/0]).
 
 -on_load(init/0).
 
@@ -55,4 +56,9 @@ remove_prepared(_Key) ->
 -spec get_nr_prepared() ->
                              non_neg_integer().
 get_nr_prepared() ->
+    exit(nif_library_not_loaded).
+
+
+-spec clear_prepared() -> ok.
+clear_prepared() ->
     exit(nif_library_not_loaded).

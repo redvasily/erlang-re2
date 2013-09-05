@@ -104,11 +104,22 @@ static ERL_NIF_TERM remove_prepared(ErlNifEnv *env, int argc, const ERL_NIF_TERM
   return enif_make_atom(env, "ok");
 }
 
+static ERL_NIF_TERM clear_prepared(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]) {
+  for (patterns_t::iterator it = prepared_patterns.begin();
+       it != prepared_patterns.end();
+       ++it) {
+    delete it->second;
+    prepared_patterns.erase(it);
+  }
+  return enif_make_atom(env, "ok");
+}
+
 static ErlNifFunc nif_funcs[] = {
     {"full_match", 2, full_match},
     {"prepare", 2, prepare},
     {"get_nr_prepared", 0, get_nr_prepared},
-    {"remove_prepared", 1, remove_prepared}
+    {"remove_prepared", 1, remove_prepared},
+    {"clear_prepared", 0, clear_prepared}
 };
 
 ERL_NIF_INIT(re2, nif_funcs, NULL, NULL, NULL, NULL)
