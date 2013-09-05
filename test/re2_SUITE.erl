@@ -18,7 +18,8 @@ all() ->
      prepare,
      full_match_prepared_true,
      full_match_prepared_false,
-     clear_prepared].
+     clear_prepared,
+     concurrent_access].
 
 
 init_per_suite(Config) ->
@@ -75,3 +76,49 @@ clear_prepared(_Config) ->
     ok = re2:prepare("h.*o", hello_pattern),
     re2:clear_prepared(),
     ?assertEqual(0, re2:get_nr_prepared()).
+
+
+concurrent_access(_Config) ->
+    Parent = self(),
+    Nr_tries = 100,
+    Nr_workers = 100,
+
+    Worker =
+        fun() ->
+                Id = list_to_atom(pid_to_list(self())),
+                lists:foreach(
+                  fun(_) ->
+                          ok = re2:prepare("h.*o", Id),
+                          case re2:full_match("hello", Id) of
+                              true ->
+                                  Parent ! match;
+                              false ->
+                                  pass
+                          end,
+                          re2:remove_prepared(Id)
+                  end,
+                  lists:seq(1, Nr_tries))
+        end,
+
+
+    lists:foreach(
+      fun(_) -> spawn(Worker) end,
+      lists:seq(1, Nr_workers)),
+
+    Nr_messages_received = receive_worker_messages(
+                             0, Nr_tries * Nr_workers, timer:seconds(1)),
+
+    ?assertEqual(Nr_tries * Nr_workers, Nr_messages_received),
+
+    ok.
+
+receive_worker_messages(Nr_received, 0, Timeout) ->
+    Nr_received;
+
+receive_worker_messages(Nr_received, Max_messages, Timeout) ->
+    receive
+        match ->
+            receive_worker_messages(Nr_received + 1, Max_messages - 1, Timeout)
+    after Timeout ->
+            Nr_received
+    end.

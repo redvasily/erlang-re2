@@ -19,6 +19,28 @@ using std::map;
 typedef map<string, RE2*> patterns_t;
 patterns_t prepared_patterns;
 
+ErlNifMutex *patterns_mutex;
+
+class NifMutex {
+public:
+  NifMutex(ErlNifMutex *mutex) {
+    this->mutex = mutex;
+    enif_mutex_lock(mutex);
+  }
+
+  ~NifMutex() {
+    enif_mutex_unlock(mutex);
+  }
+private:
+  ErlNifMutex *mutex;
+};
+
+
+int load(ErlNifEnv* env, void** priv_data, ERL_NIF_TERM load_info) {
+  char mutex_name[] = "re2_patterns";
+  patterns_mutex = enif_mutex_create(mutex_name);
+  return 0;
+}
 
 class BadArg : public exception {};
 
@@ -54,6 +76,7 @@ static ERL_NIF_TERM full_match(ErlNifEnv* env, int argc, const ERL_NIF_TERM argv
   RE2 *pattern;
   try {
     key = read_atom_arg(env, argv[1]);
+    NifMutex mutex(patterns_mutex);
     pattern = prepared_patterns[key];
   } catch (const BadArg &e) {
     string expression = read_iolist_arg(env, argv[1]);
@@ -79,11 +102,13 @@ static ERL_NIF_TERM prepare(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
   }
 
   RE2 *re = new RE2(pattern);
+  NifMutex mutex(patterns_mutex);
   prepared_patterns[key] = re;
   return enif_make_atom(env, "ok");
 }
 
 static ERL_NIF_TERM get_nr_prepared(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]) {
+  NifMutex mutex(patterns_mutex);
   return enif_make_int(env, prepared_patterns.size());
 }
 
@@ -95,6 +120,7 @@ static ERL_NIF_TERM remove_prepared(ErlNifEnv *env, int argc, const ERL_NIF_TERM
     return enif_make_badarg(env);
   }
 
+  NifMutex mutex(patterns_mutex);
   patterns_t::iterator it = prepared_patterns.find(key);
   if (it == prepared_patterns.end()) {
     return enif_make_atom(env, "error");
@@ -105,6 +131,7 @@ static ERL_NIF_TERM remove_prepared(ErlNifEnv *env, int argc, const ERL_NIF_TERM
 }
 
 static ERL_NIF_TERM clear_prepared(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[]) {
+  NifMutex mutex(patterns_mutex);
   for (patterns_t::iterator it = prepared_patterns.begin();
        it != prepared_patterns.end();
        ++it) {
@@ -122,4 +149,4 @@ static ErlNifFunc nif_funcs[] = {
     {"clear_prepared", 0, clear_prepared}
 };
 
-ERL_NIF_INIT(re2, nif_funcs, NULL, NULL, NULL, NULL)
+ERL_NIF_INIT(re2, nif_funcs, load, NULL, NULL, NULL)
