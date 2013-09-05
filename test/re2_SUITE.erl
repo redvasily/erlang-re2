@@ -22,22 +22,21 @@ all() ->
 
 
 init_per_suite(Config) ->
+    ok = application:start(re2),
     Config.
 
 
 end_per_suite(_Config) ->
+    ok = application:stop(re2),
     ok.
 
 
 init_per_testcase(_TestCase, Config) ->
-    ok = application:start(re2),
-    ct:log("application_started"),
     Config.
 
 
 end_per_testcase(_TestCase, _Config) ->
-    ok = application:stop(re2),
-    application:unload(re2),
+    re2:clear_prepared(),
     ok.
 
 
